@@ -1,265 +1,2270 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Link Arşivi</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMBAT ZONE - FPS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Orbitron:wght@700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<link rel="icon" type="image/png" href="https://img.icons8.com/color/48/whatsapp--v1.png">
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            background: #000;
+            cursor: none;
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<style>
-  :root {
-    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --radius: 12px;
-  }
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
 
-  .dark-mode {
-    --bg: #0f172a;
-    --side-bg: #1e293b;
-    --text: #f8fafc;
-    --accent: #38bdf8;
-    --card-bg: #334155;
-    --input-bg: #1e293b;
-  }
+        .hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
 
-  .light-mode {
-    --bg: #f8fafc;
-    --side-bg: #ffffff;
-    --text: #0f172a;
-    --accent: #0284c7;
-    --card-bg: #f1f5f9;
-    --input-bg: #ffffff;
-  }
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+        }
 
-  body {
-    margin: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    display: flex;
-    height: 100vh;
-    background-color: var(--bg);
-    color: var(--text);
-    transition: background-color var(--transition);
-    overflow: hidden;
-  }
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 50, 50, 0.9);
+            box-shadow: 0 0 10px rgba(255, 50, 50, 0.5);
+        }
 
-  #sidebar {
-    width: 380px;
-    background-color: var(--side-bg);
-    border-right: 1px solid rgba(128,128,128,0.2);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 10px 0 15px -3px rgba(0,0,0,0.1);
-  }
+        .crosshair::before {
+            width: 2px;
+            height: 20px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
 
-  .search-box {
-    padding: 10px;
-    border-radius: var(--radius);
-    border: 1px solid var(--accent);
-    background: var(--input-bg);
-    color: var(--text);
-    margin-bottom: 15px;
-    outline: none;
-  }
+        .crosshair::after {
+            width: 20px;
+            height: 2px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
 
-  #linkList {
-    flex-grow: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+        .stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ff41;
+            font-size: 16px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.7), 2px 2px 4px rgba(0, 0, 0, 0.9);
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-left: 4px solid #00ff41;
+        }
 
-  .link-card {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    gap: 15px;
-    cursor: grab;
-    border: 1px solid transparent;
-    transition: 0.2s;
-  }
+        .stats div {
+            margin: 5px 0;
+        }
 
-  .link-card:hover {
-    border-color: var(--accent);
-    transform: translateX(5px);
-  }
+        .weapon-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
 
-  .favicon-img {
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    background: white;
-    padding: 2px;
-  }
+        .weapon-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 32px;
+            font-weight: 900;
+            color: #ff6600;
+            text-shadow: 0 0 20px rgba(255, 100, 0, 0.8);
+            margin-bottom: 10px;
+        }
 
-  .link-info {
-    flex-grow: 1;
-    color: var(--text);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+        .weapon-keys {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
 
-  .delete-btn {
-    color: #ff4d4d;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 20px;
-    padding: 0 5px;
-  }
+        .weapon-key {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 15px;
+            border: 2px solid #444;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
 
-  #main {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 40px;
-  }
+        .weapon-key:hover {
+            border-color: #ff6600;
+            color: #ff6600;
+            box-shadow: 0 0 15px rgba(255, 100, 0, 0.5);
+        }
 
-  .input-group {
-    width: 100%;
-    max-width: 500px;
-    display: flex;
-    gap: 10px;
-  }
+        .weapon-key.active {
+            border-color: #00ff41;
+            color: #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.7);
+        }
 
-  .input-box {
-    flex-grow: 1;
-    padding: 15px;
-    background: var(--input-bg);
-    border: 2px solid var(--card-bg);
-    color: var(--text);
-    border-radius: var(--radius);
-    outline: none;
-  }
+        .mini-map {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
 
-  .action-btn {
-    background: var(--accent);
-    color: white;
-    padding: 0 25px;
-    border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-weight: bold;
-  }
+        #mapCanvas {
+            display: block;
+        }
 
-  .controls {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-  }
+        .combo-meter {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-  .mini-btn {
-    padding: 8px 15px;
-    border-radius: 20px;
-    border: none;
-    cursor: pointer;
-    background: var(--accent);
-    color: white;
-    font-size: 12px;
-  }
-</style>
+        .combo-meter.active {
+            opacity: 1;
+        }
+
+        .combo-text {
+            font-size: 14px;
+            color: #888;
+            letter-spacing: 2px;
+        }
+
+        .combo-count {
+            font-family: 'Orbitron', monospace;
+            font-size: 64px;
+            font-weight: 900;
+            color: #ff6600;
+            text-shadow: 0 0 30px rgba(255, 100, 0, 1);
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .combo-multiplier {
+            font-size: 24px;
+            color: #00ff41;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.8);
+        }
+
+        .armor-bar {
+            position: absolute;
+            bottom: 90px;
+            left: 40px;
+            width: 300px;
+        }
+
+        .armor-label {
+            color: #4da6ff;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .armor-container {
+            width: 100%;
+            height: 25px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .armor-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4da6ff, #80c0ff);
+            box-shadow: 0 0 20px rgba(77, 166, 255, 0.6);
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .armor-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .damage-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle, transparent 40%, rgba(255, 0, 0, 0.5) 100%);
+            transition: opacity 0.3s ease;
+        }
+
+        .damage-indicator.active {
+            opacity: 1;
+        }
+
+        .wave-announcement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', monospace;
+            font-size: 72px;
+            font-weight: 900;
+            color: #ff6600;
+            text-shadow: 0 0 40px rgba(255, 100, 0, 1);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5000;
+        }
+
+        .wave-announcement.active {
+            animation: waveAnnounce 3s ease;
+        }
+
+        @keyframes waveAnnounce {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            80% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        .blood-splatter {
+            position: fixed;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255, 0, 0, 0.6), transparent);
+            border-radius: 50%;
+            animation: splatter 0.5s ease forwards;
+        }
+
+        @keyframes splatter {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        .ammo-display {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            text-align: right;
+        }
+
+        .ammo-count {
+            font-family: 'Orbitron', monospace;
+            font-size: 56px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 100, 0, 0.8), 
+                         0 0 40px rgba(255, 50, 0, 0.4),
+                         3px 3px 6px rgba(0, 0, 0, 0.9);
+            letter-spacing: 3px;
+        }
+
+        .ammo-label {
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: -5px;
+            letter-spacing: 2px;
+        }
+
+        .health-bar {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 300px;
+        }
+
+        .health-label {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .health-container {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff4444);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .health-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .kill-feed {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            text-align: right;
+            max-width: 400px;
+        }
+
+        .kill-message {
+            color: #fff;
+            font-size: 16px;
+            margin: 5px 0;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border-left: 3px solid #ff0000;
+            animation: slideIn 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: scanlines 8s linear infinite;
+        }
+
+        @keyframes scanlines {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 0 100%;
+            }
+        }
+
+        .game-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 120px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255, 50, 0, 0.8),
+                         0 0 60px rgba(255, 50, 0, 0.5),
+                         0 0 90px rgba(255, 50, 0, 0.3),
+                         5px 5px 10px rgba(0, 0, 0, 0.9);
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                text-shadow: 0 0 30px rgba(255, 50, 0, 0.8),
+                             0 0 60px rgba(255, 50, 0, 0.5),
+                             0 0 90px rgba(255, 50, 0, 0.3);
+            }
+            50% {
+                text-shadow: 0 0 40px rgba(255, 100, 0, 1),
+                             0 0 80px rgba(255, 50, 0, 0.7),
+                             0 0 120px rgba(255, 50, 0, 0.5);
+            }
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #888;
+            margin-bottom: 60px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .start-button {
+            padding: 20px 60px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #000;
+            background: linear-gradient(135deg, #ff3300, #ff6600);
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 50, 0, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .start-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 50, 0, 0.6),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .start-button:hover::before {
+            left: 100%;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 40px;
+            color: #666;
+            font-size: 16px;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        .controls span {
+            color: #ff6600;
+            font-weight: 700;
+        }
+
+        .hit-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .hit-marker.active {
+            animation: hitMarkerAnim 0.2s ease;
+        }
+
+        .hit-marker.headshot {
+            animation: headshotMarkerAnim 0.3s ease;
+        }
+
+        @keyframes hitMarkerAnim {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        }
+
+        @keyframes headshotMarkerAnim {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+            }
+            30% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.3) rotate(180deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.5) rotate(360deg);
+            }
+        }
+
+        .hit-marker::before,
+        .hit-marker::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+        }
+
+        .hit-marker.headshot::before,
+        .hit-marker.headshot::after {
+            background: #ff0000;
+            box-shadow: 0 0 20px #ff0000;
+        }
+
+        .hit-marker::before {
+            width: 3px;
+            height: 30px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .hit-marker::after {
+            width: 3px;
+            height: 30px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        .game-over.active {
+            display: flex;
+        }
+
+        .game-over-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 80px;
+            font-weight: 900;
+            color: #ff0000;
+            text-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 36px;
+            color: #fff;
+            margin-bottom: 40px;
+        }
+
+        .restart-button {
+            padding: 15px 50px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            background: linear-gradient(135deg, #00ff41, #00cc33);
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .muzzle-flash {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(255, 200, 0, 0.8), transparent);
+            filter: blur(10px);
+        }
+
+        .muzzle-flash.active {
+            animation: flashAnim 0.1s ease;
+        }
+
+        @keyframes flashAnim {
+            0%, 100% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .inventory {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ff6600;
+            padding: 30px;
+            min-width: 500px;
+            display: none;
+            box-shadow: 0 0 40px rgba(255, 100, 0, 0.5),
+                        inset 0 0 20px rgba(255, 100, 0, 0.1);
+        }
+
+        .inventory.active {
+            display: block;
+        }
+
+        .inventory-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 32px;
+            font-weight: 900;
+            color: #ff6600;
+            text-align: center;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px rgba(255, 100, 0, 0.8);
+            letter-spacing: 3px;
+        }
+
+        .inventory-items {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .inventory-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 100, 0, 0.1);
+            border: 2px solid #ff6600;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .inventory-item:hover {
+            background: rgba(255, 100, 0, 0.3);
+            border-color: #ff9933;
+            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.4);
+        }
+
+        .item-icon {
+            font-size: 40px;
+            margin-right: 20px;
+            filter: drop-shadow(0 0 10px rgba(255, 100, 0, 0.5));
+        }
+
+        .item-name {
+            flex: 1;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .item-count {
+            font-family: 'Orbitron', monospace;
+            font-size: 28px;
+            font-weight: 900;
+            color: #00ff41;
+            margin-right: 15px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.7);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .item-key {
+            font-size: 16px;
+            color: #888;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border: 1px solid #444;
+            border-radius: 3px;
+        }
+
+        .pickup-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 65, 0.9);
+            color: #000;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 20px 40px;
+            border: 3px solid #00ff41;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            animation: pickupAnim 1.5s ease;
+        }
+
+        @keyframes pickupAnim {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            80% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -60%) scale(1);
+            }
+        }
+    </style>
 </head>
-<body class="dark-mode">
+<body>
+    <div class="start-screen" id="startScreen">
+        <div class="game-title">COMBAT ZONE</div>
+        <div class="subtitle">Modern Warfare Simulator</div>
+        <button class="start-button" id="startButton">GÖREV BAŞLAT</button>
+        <div class="controls">
+            <span>WASD</span> - Hareket | <span>FARE</span> - Nişan | <span>TIKLAMA</span> - Ateş | <span>R</span> - Reload<br>
+            <span>1/2/3</span> - Silah Değiştir | <span>E</span> - Sağlık | <span>Q</span> - Mermi | <span>F</span> - Zırh | <span>G</span> - Bomba | <span>TAB</span> - Envanter
+        </div>
+    </div>
 
-<div class="controls">
-  <button class="mini-btn" onclick="exportJSON()">YEDEKLE</button>
-  <button class="mini-btn" onclick="toggleMode()">MOD</button>
-</div>
-
-<div id="sidebar">
-  <h2 style="margin-top:0">📁 ARŞİV</h2>
-  <input type="text" id="searchInput" class="search-box" placeholder="Ara..." oninput="renderLinks()">
-  <div id="linkList"></div>
-</div>
-
-<div id="main">
-  <h1>Link Ekle</h1>
-  <div class="input-group">
-    <input type="text" id="urlInput" class="input-box" placeholder="Site adresi gir...">
-    <button class="action-btn" onclick="addLink()">EKLE</button>
-  </div>
-</div>
-
-<script>
-  let savedLinks = JSON.parse(localStorage.getItem('iconLinks')) || [];
-
-  const dragArea = document.getElementById('linkList');
-  new Sortable(dragArea, {
-    animation: 150,
-    onEnd: function() {
-      const cards = Array.from(dragArea.querySelectorAll('.link-card'));
-      savedLinks = cards.map(card => savedLinks.find(item => item.id == card.dataset.id));
-      localStorage.setItem('iconLinks', JSON.stringify(savedLinks));
-    }
-  });
-
-  window.onload = renderLinks;
-
-  function addLink() {
-    const input = document.getElementById('urlInput');
-    let val = input.value.trim();
-    if (val) {
-      let rawUrl = val.replace(/^(https?:\/\/)/, "").split('/')[0];
-      let fullUrl = val.startsWith('http') ? val : 'https://' + val;
-      let iconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${rawUrl}`;
-
-      savedLinks.unshift({ id: Date.now(), display: val, fullUrl: fullUrl, icon: iconUrl });
-      updateStorage();
-      input.value = '';
-    }
-  }
-
-  function deleteLink(id) {
-    savedLinks = savedLinks.filter(item => item.id !== id);
-    updateStorage();
-  }
-
-  function renderLinks() {
-    const list = document.getElementById('linkList');
-    const term = document.getElementById('searchInput').value.toLowerCase();
-    list.innerHTML = '';
+    <div class="game-over" id="gameOver">
+        <div class="game-over-title">GÖREVİ BAŞARISIZ</div>
+        <div class="final-score" id="finalScore">Öldürülen Düşman: 0</div>
+        <button class="restart-button" id="restartButton">YENİDEN DENE</button>
+    </div>
     
-    savedLinks.filter(i => i.display.toLowerCase().includes(term)).forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'link-card';
-      card.dataset.id = item.id;
-      card.innerHTML = `
-        <img src="${item.icon}" class="favicon-img" onerror="this.src='https://img.icons8.com/color/48/whatsapp--v1.png'">
-        <a href="${item.fullUrl}" target="_blank" class="link-info">${item.display}</a>
-        <span class="delete-btn" onclick="deleteLink(${item.id})">×</span>
-      `;
-      list.appendChild(card);
-    });
-  }
+    <div class="damage-indicator" id="damageIndicator"></div>
+    <div class="wave-announcement" id="waveAnnouncement">DALGA 1</div>
 
-  function updateStorage() {
-    localStorage.setItem('iconLinks', JSON.stringify(savedLinks));
-    renderLinks();
-  }
+    <canvas id="gameCanvas"></canvas>
 
-  function toggleMode() {
-    document.body.classList.toggle('dark-mode');
-    document.body.classList.toggle('light-mode');
-  }
+    <div class="hud">
+        <div class="crosshair"></div>
+        <div class="hit-marker" id="hitMarker"></div>
+        <div class="muzzle-flash" id="muzzleFlash"></div>
+        
+        <div class="stats">
+            <div>DALGA: <span id="waveNumber">1</span></div>
+            <div>DÜŞMAN: <span id="enemyCount">0</span></div>
+            <div>ÖLDÜRİLEN: <span id="killCount">0</span></div>
+            <div>HEADSHOT: <span id="headshotCount">0</span></div>
+            <div>İSABET: <span id="accuracy">0%</span></div>
+            <div>FPS: <span id="fps">60</span></div>
+        </div>
+        
+        <div class="weapon-info">
+            <div class="weapon-name" id="weaponName">AK-47</div>
+            <div class="weapon-keys">
+                <span class="weapon-key" onclick="switchWeapon('ak47')">[1] AK-47</span>
+                <span class="weapon-key" onclick="switchWeapon('sniper')">[2] AWP</span>
+                <span class="weapon-key" onclick="switchWeapon('shotgun')">[3] SHOTGUN</span>
+            </div>
+        </div>
+        
+        <div class="mini-map" id="miniMap">
+            <canvas id="mapCanvas" width="200" height="200"></canvas>
+        </div>
+        
+        <div class="combo-meter" id="comboMeter">
+            <div class="combo-text">COMBO</div>
+            <div class="combo-count" id="comboCount">0</div>
+            <div class="combo-multiplier" id="comboMultiplier">x1.0</div>
+        </div>
 
-  function exportJSON() {
-    const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedLinks));
-    const a = document.createElement('a');
-    a.href = data; a.download = "yedek.json"; a.click();
-  }
+        <div class="ammo-display">
+            <div class="ammo-count">
+                <span id="currentAmmo">30</span> / <span id="totalAmmo">90</span>
+            </div>
+            <div class="ammo-label">MERMİ</div>
+        </div>
 
-  document.getElementById("urlInput").addEventListener("keypress", (e) => { if (e.key === "Enter") addLink(); });
-</script>
+        <div class="health-bar">
+            <div class="health-label">SAĞLIK</div>
+            <div class="health-container">
+                <div class="health-fill" id="healthFill" style="width: 100%"></div>
+            </div>
+        </div>
+        
+        <div class="armor-bar">
+            <div class="armor-label">ZIRH</div>
+            <div class="armor-container">
+                <div class="armor-fill" id="armorFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="kill-feed" id="killFeed"></div>
+        
+        <div class="inventory" id="inventory">
+            <div class="inventory-title">ENVANTER [TAB]</div>
+            <div class="inventory-items">
+                <div class="inventory-item" onclick="useMedkit()">
+                    <div class="item-icon">🏥</div>
+                    <div class="item-name">Sağlık Paketi</div>
+                    <div class="item-count" id="medkitCount">3</div>
+                    <div class="item-key">[E]</div>
+                </div>
+                <div class="inventory-item" onclick="useAmmoBox()">
+                    <div class="item-icon">📦</div>
+                    <div class="item-name">Mermi Kutusu</div>
+                    <div class="item-count" id="ammoBoxCount">1</div>
+                    <div class="item-key">[Q]</div>
+                </div>
+                <div class="inventory-item" onclick="useArmor()">
+                    <div class="item-icon">🛡️</div>
+                    <div class="item-name">Zırh Plakası</div>
+                    <div class="item-count" id="armorCount">2</div>
+                    <div class="item-key">[F]</div>
+                </div>
+                <div class="inventory-item" onclick="useGrenade()">
+                    <div class="item-icon">💣</div>
+                    <div class="item-name">El Bombası</div>
+                    <div class="item-count" id="grenadeCount">2</div>
+                    <div class="item-key">[G]</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Oyun Değişkenleri
+        let scene, camera, renderer, raycaster;
+        let enemies = [];
+        let bullets = [];
+        let buildings = [];
+        let healthPacks = [];
+        let ammoBoxes = [];
+        let particles = [];
+        let playerWeapon = null;
+        let isReloading = false;
+        let reloadProgress = 0;
+        let gameStarted = false;
+        let score = 0;
+        let kills = 0;
+        let headshots = 0;
+        let accuracy = 0;
+        let shotsFired = 0;
+        let shotsHit = 0;
+        let health = 100;
+        let maxHealth = 100;
+        let armor = 0;
+        let maxArmor = 100;
+        let currentAmmo = 30;
+        let totalAmmo = 90;
+        const maxAmmoPerMag = 30;
+        const reloadTime = 2000;
+        let survivalTime = 0;
+        let waveNumber = 1;
+        let enemiesThisWave = 5;
+        let enemiesKilledThisWave = 0;
+        
+        // Silah sistemi
+        let weapons = {
+            ak47: {
+                name: 'AK-47',
+                damage: 34,
+                fireRate: 100,
+                reloadTime: 2000,
+                magSize: 30,
+                maxAmmo: 90,
+                spread: 0.02,
+                currentAmmo: 30,
+                totalAmmo: 90
+            },
+            sniper: {
+                name: 'AWP',
+                damage: 100,
+                fireRate: 1500,
+                reloadTime: 3000,
+                magSize: 5,
+                maxAmmo: 25,
+                spread: 0.001,
+                currentAmmo: 5,
+                totalAmmo: 25
+            },
+            shotgun: {
+                name: 'SHOTGUN',
+                damage: 25,
+                fireRate: 800,
+                reloadTime: 2500,
+                magSize: 8,
+                maxAmmo: 32,
+                spread: 0.15,
+                pelletsPerShot: 8,
+                currentAmmo: 8,
+                totalAmmo: 32
+            }
+        };
+        
+        let currentWeapon = 'ak47';
+        let canShoot = true;
+        
+        // Envanter
+        let inventory = {
+            medkits: 3,
+            grenades: 2,
+            ammoBoxes: 1,
+            armorPlates: 2
+        };
+        let inventoryOpen = false;
+        
+        // Düşman tipleri
+        const enemyTypes = {
+            soldier: { health: 100, speed: 0.02, color: 0x8B4513, points: 100 },
+            heavy: { health: 200, speed: 0.01, color: 0x2a2a2a, points: 200 },
+            runner: { health: 50, speed: 0.04, color: 0xff4444, points: 150 }
+        };
+        
+        // Ses sistemi
+        let audioContext = null;
+        
+        // Performans
+        let lastTime = Date.now();
+        let fps = 60;
+        
+        // Hareket
+        const moveSpeed = 0.3;
+        const keys = {};
+        let mouseX = 0, mouseY = 0;
+        let yaw = 0, pitch = 0;
+
+        // Ses efektleri (basit)
+        const initAudio = () => {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        };
+        
+        const playSound = (freq, duration, type = 'square', volume = 0.1) => {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = freq;
+            oscillator.type = type;
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        };
+        
+        const playWeaponSound = (weaponType) => {
+            initAudio();
+            switch(weaponType) {
+                case 'ak47':
+                    playSound(180, 0.1, 'square', 0.15);
+                    break;
+                case 'sniper':
+                    playSound(80, 0.3, 'sawtooth', 0.2);
+                    setTimeout(() => playSound(60, 0.2, 'sine', 0.1), 50);
+                    break;
+                case 'shotgun':
+                    playSound(100, 0.15, 'square', 0.25);
+                    setTimeout(() => playSound(80, 0.1, 'square', 0.15), 30);
+                    break;
+            }
+        };
+
+        // Three.js Başlatma
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x4a4a4a, 10, 100);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 5);
+
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('gameCanvas'),
+                antialias: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            raycaster = new THREE.Raycaster();
+
+            // Işıklandırma
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.far = 50;
+            scene.add(dirLight);
+
+            // Zemin
+            const groundGeometry = new THREE.PlaneGeometry(200, 200);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x3a3a3a,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            // Binalar oluştur
+            createBuildings();
+            
+            // Oyuncu silahı oluştur
+            createPlayerWeapon();
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('click', shoot);
+            document.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+                if (e.key.toLowerCase() === 'r') reload();
+                if (e.key.toLowerCase() === 'e') useMedkit();
+                if (e.key.toLowerCase() === 'q') useAmmoBox();
+                if (e.key.toLowerCase() === 'f') useArmor();
+                if (e.key.toLowerCase() === 'g') useGrenade();
+                if (e.key === '1') switchWeapon('ak47');
+                if (e.key === '2') switchWeapon('sniper');
+                if (e.key === '3') switchWeapon('shotgun');
+                if (e.key.toLowerCase() === 'tab') {
+                    e.preventDefault();
+                    toggleInventory();
+                }
+            });
+            document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+            // Başlangıç ekranı
+            document.getElementById('startButton').addEventListener('click', startGame);
+            document.getElementById('restartButton').addEventListener('click', restartGame);
+        }
+
+        function createBuildings() {
+            const buildingPositions = [
+                [-15, 0, -15], [15, 0, -15], [-15, 0, 15], [15, 0, 15],
+                [-25, 0, 0], [25, 0, 0], [0, 0, -25], [0, 0, 25]
+            ];
+
+            buildingPositions.forEach(pos => {
+                const height = 5 + Math.random() * 10;
+                const width = 3 + Math.random() * 3;
+                
+                const geometry = new THREE.BoxGeometry(width, height, width);
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0x2a2a2a,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+                const building = new THREE.Mesh(geometry, material);
+                building.position.set(pos[0], height / 2, pos[2]);
+                building.castShadow = true;
+                building.receiveShadow = true;
+                scene.add(building);
+                buildings.push(building);
+            });
+        }
+
+        function createPlayerWeapon() {
+            playerWeapon = new THREE.Group();
+            
+            const gunMetal = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a,
+                roughness: 0.4,
+                metalness: 0.8
+            });
+            
+            const gunWood = new THREE.MeshStandardMaterial({ 
+                color: 0x8B4513,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+            
+            const skinMaterial = new THREE.MeshStandardMaterial({
+                color: 0xf0c090,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            
+            // === AK-47 SİLAH MODELİ ===
+            
+            // Gövde (receiver)
+            const receiverGeometry = new THREE.BoxGeometry(0.12, 0.12, 0.5);
+            const receiver = new THREE.Mesh(receiverGeometry, gunMetal);
+            receiver.position.set(0, 0, -0.2);
+            playerWeapon.add(receiver);
+            
+            // Namlu
+            const barrelGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.5, 12);
+            const barrel = new THREE.Mesh(barrelGeometry, gunMetal);
+            barrel.rotation.z = Math.PI / 2;
+            barrel.position.set(0, 0.03, -0.6);
+            playerWeapon.add(barrel);
+            
+            // Namlu gaz tüpü (üstteki boru)
+            const gastubeGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.45, 8);
+            const gastube = new THREE.Mesh(gastubeGeometry, gunMetal);
+            gastube.rotation.z = Math.PI / 2;
+            gastube.position.set(0, 0.09, -0.57);
+            playerWeapon.add(gastube);
+            
+            // Ön kundak (handguard) - ahşap
+            const handguardGeometry = new THREE.BoxGeometry(0.08, 0.08, 0.35);
+            const handguard = new THREE.Mesh(handguardGeometry, gunWood);
+            handguard.position.set(0, 0.03, -0.5);
+            playerWeapon.add(handguard);
+            
+            // Şarjör (magazine) - kavisli AK şarjörü
+            const magGeometry = new THREE.BoxGeometry(0.08, 0.25, 0.12);
+            const magazine = new THREE.Mesh(magGeometry, gunMetal);
+            magazine.position.set(0, -0.16, -0.15);
+            magazine.rotation.x = -0.1;
+            playerWeapon.add(magazine);
+            playerWeapon.userData.magazine = magazine;
+            
+            // Kabza (pistol grip)
+            const gripGeometry = new THREE.BoxGeometry(0.06, 0.15, 0.1);
+            const grip = new THREE.Mesh(gripGeometry, gunWood);
+            grip.position.set(0, -0.08, 0.05);
+            grip.rotation.x = -0.2;
+            playerWeapon.add(grip);
+            
+            // Dipçik (stock) - ahşap
+            const stockGeometry = new THREE.BoxGeometry(0.08, 0.08, 0.35);
+            const stock = new THREE.Mesh(stockGeometry, gunWood);
+            stock.position.set(0, 0.01, 0.35);
+            playerWeapon.add(stock);
+            
+            // Horoz (charging handle)
+            const chargingHandleGeometry = new THREE.BoxGeometry(0.03, 0.02, 0.08);
+            const chargingHandle = new THREE.Mesh(chargingHandleGeometry, gunMetal);
+            chargingHandle.position.set(0.08, 0.04, -0.05);
+            playerWeapon.add(chargingHandle);
+            
+            // Ön nişangah
+            const frontSightGeometry = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+            const frontSight = new THREE.Mesh(frontSightGeometry, gunMetal);
+            frontSight.position.set(0, 0.12, -0.75);
+            playerWeapon.add(frontSight);
+            
+            // Arka nişangah
+            const rearSightGeometry = new THREE.BoxGeometry(0.04, 0.04, 0.02);
+            const rearSight = new THREE.Mesh(rearSightGeometry, gunMetal);
+            rearSight.position.set(0, 0.1, 0.05);
+            playerWeapon.add(rearSight);
+            
+            // === ELLER ===
+            
+            // SOL EL (ön kundağı tutuyor)
+            const leftHandGroup = new THREE.Group();
+            
+            // Sol el - avuç içi
+            const leftPalmGeometry = new THREE.BoxGeometry(0.08, 0.12, 0.04);
+            const leftPalm = new THREE.Mesh(leftPalmGeometry, skinMaterial);
+            leftPalm.position.set(-0.12, -0.02, -0.45);
+            leftHandGroup.add(leftPalm);
+            
+            // Sol el - parmaklar
+            for (let i = 0; i < 4; i++) {
+                const fingerGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.02);
+                const finger = new THREE.Mesh(fingerGeometry, skinMaterial);
+                finger.position.set(-0.12 + (i * 0.02), -0.06, -0.47);
+                leftHandGroup.add(finger);
+            }
+            
+            // Sol el - başparmak
+            const leftThumbGeometry = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+            const leftThumb = new THREE.Mesh(leftThumbGeometry, skinMaterial);
+            leftThumb.position.set(-0.05, 0, -0.44);
+            leftThumb.rotation.z = Math.PI / 4;
+            leftHandGroup.add(leftThumb);
+            
+            // Sol kol (bilek)
+            const leftWristGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.15, 8);
+            const leftWrist = new THREE.Mesh(leftWristGeometry, skinMaterial);
+            leftWrist.rotation.x = Math.PI / 2;
+            leftWrist.rotation.z = 0.3;
+            leftWrist.position.set(-0.15, 0.05, -0.3);
+            leftHandGroup.add(leftWrist);
+            
+            playerWeapon.add(leftHandGroup);
+            playerWeapon.userData.leftHand = leftHandGroup;
+            
+            // SAĞ EL (kabzayı ve tetiği tutuyor)
+            const rightHandGroup = new THREE.Group();
+            
+            // Sağ el - avuç içi
+            const rightPalmGeometry = new THREE.BoxGeometry(0.08, 0.12, 0.04);
+            const rightPalm = new THREE.Mesh(rightPalmGeometry, skinMaterial);
+            rightPalm.position.set(0.1, -0.1, 0);
+            rightHandGroup.add(rightPalm);
+            
+            // Sağ el - parmaklar (kabzayı sarıyor)
+            for (let i = 0; i < 3; i++) {
+                const fingerGeometry = new THREE.BoxGeometry(0.02, 0.08, 0.02);
+                const finger = new THREE.Mesh(fingerGeometry, skinMaterial);
+                finger.position.set(0.1, -0.14 - (i * 0.02), 0.05);
+                finger.rotation.x = -0.3;
+                rightHandGroup.add(finger);
+            }
+            
+            // Sağ el - işaret parmağı (tetik)
+            const triggerFingerGeometry = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+            const triggerFinger = new THREE.Mesh(triggerFingerGeometry, skinMaterial);
+            triggerFinger.position.set(0.1, -0.12, -0.05);
+            triggerFinger.rotation.x = Math.PI / 3;
+            rightHandGroup.add(triggerFinger);
+            playerWeapon.userData.triggerFinger = triggerFinger;
+            
+            // Sağ el - başparmak
+            const rightThumbGeometry = new THREE.BoxGeometry(0.02, 0.06, 0.02);
+            const rightThumb = new THREE.Mesh(rightThumbGeometry, skinMaterial);
+            rightThumb.position.set(0.03, -0.08, 0.08);
+            rightThumb.rotation.x = -0.5;
+            rightHandGroup.add(rightThumb);
+            
+            // Sağ kol (bilek)
+            const rightWristGeometry = new THREE.CylinderGeometry(0.04, 0.04, 0.15, 8);
+            const rightWrist = new THREE.Mesh(rightWristGeometry, skinMaterial);
+            rightWrist.rotation.x = Math.PI / 2;
+            rightWrist.rotation.z = -0.2;
+            rightWrist.position.set(0.15, -0.05, 0.15);
+            rightHandGroup.add(rightWrist);
+            
+            playerWeapon.add(rightHandGroup);
+            playerWeapon.userData.rightHand = rightHandGroup;
+            
+            // Silahı kameraya ekle - FPS pozisyonu
+            playerWeapon.position.set(0.15, -0.25, -0.5);
+            playerWeapon.rotation.y = -0.05;
+            playerWeapon.rotation.x = 0.02;
+            
+            camera.add(playerWeapon);
+        }
+
+        function createEnemy() {
+            // Rastgele düşman tipi seç
+            const typeKeys = Object.keys(enemyTypes);
+            const randomType = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+            const enemyData = enemyTypes[randomType];
+            
+            const enemy = new THREE.Group();
+            
+            // Malzemeler - tip bazlı renk
+            const uniformMaterial = new THREE.MeshStandardMaterial({ 
+                color: enemyData.color,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+            
+            const skinMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xf0c090,
+                roughness: 0.8,
+                metalness: 0.1
+            });
+            
+            const bootsMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+            
+            // Heavy düşmanlar daha büyük
+            const scale = randomType === 'heavy' ? 1.3 : (randomType === 'runner' ? 0.9 : 1);
+            
+            // Kafa
+            const headGeometry = new THREE.SphereGeometry(0.25 * scale, 16, 16);
+            const head = new THREE.Mesh(headGeometry, skinMaterial);
+            head.position.y = 1.55 * scale;
+            head.castShadow = true;
+            enemy.add(head);
+            
+            // Gövde
+            const torsoGeometry = new THREE.BoxGeometry(0.5 * scale, 0.6 * scale, 0.3 * scale);
+            const torso = new THREE.Mesh(torsoGeometry, uniformMaterial);
+            torso.position.y = 1.0 * scale;
+            torso.castShadow = true;
+            enemy.add(torso);
+            
+            // Kollar ve bacaklar (basitleştirilmiş)
+            const limbGeometry = new THREE.CylinderGeometry(0.08 * scale, 0.08 * scale, 0.4 * scale, 8);
+            
+            for (let i = 0; i < 4; i++) {
+                const limb = new THREE.Mesh(limbGeometry, uniformMaterial);
+                limb.castShadow = true;
+                enemy.add(limb);
+            }
+            
+            // Rastgele pozisyon
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 20 + Math.random() * 30;
+            enemy.position.set(
+                Math.cos(angle) * distance,
+                0.55,
+                Math.sin(angle) * distance
+            );
+            
+            enemy.castShadow = true;
+            enemy.userData.health = enemyData.health;
+            enemy.userData.maxHealth = enemyData.health;
+            enemy.userData.speed = enemyData.speed;
+            enemy.userData.walkCycle = Math.random() * Math.PI * 2;
+            enemy.userData.type = randomType;
+            enemy.userData.points = enemyData.points;
+            
+            scene.add(enemy);
+            enemies.push(enemy);
+            
+            updateEnemyCount();
+        }
+
+        // Silah değiştirme
+        function switchWeapon(weaponName) {
+            if (!gameStarted || isReloading) return;
+            currentWeapon = weaponName;
+            currentAmmo = weapons[weaponName].currentAmmo;
+            totalAmmo = weapons[weaponName].totalAmmo;
+            
+            updateAmmoDisplay();
+            document.getElementById('weaponName').textContent = weapons[weaponName].name;
+            
+            // Silah değişim sesi
+            playSound(400, 0.2, 'sine', 0.1);
+            addKillFeedMessage(`${weapons[weaponName].name} seçildi`);
+        }
+
+        // Parçacık sistemi
+        function createBloodParticles(position) {
+            for (let i = 0; i < 15; i++) {
+                const geometry = new THREE.SphereGeometry(0.05, 4, 4);
+                const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                particle.position.copy(position);
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.3,
+                    Math.random() * 0.3,
+                    (Math.random() - 0.5) * 0.3
+                );
+                particle.life = 60;
+                
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function updateParticles() {
+            particles.forEach((particle, index) => {
+                particle.life--;
+                particle.position.add(particle.velocity);
+                particle.velocity.y -= 0.01; // Gravity
+                
+                if (particle.life <= 0) {
+                    scene.remove(particle);
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        // Mini-map rendering
+        function updateMiniMap() {
+            const canvas = document.getElementById('mapCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, 200, 200);
+            
+            // Grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 200; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 200);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(200, i);
+                ctx.stroke();
+            }
+            
+            // Player
+            ctx.fillStyle = '#00ff41';
+            ctx.beginPath();
+            ctx.arc(100, 100, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Player direction
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(100, 100);
+            ctx.lineTo(100 + Math.sin(yaw) * 15, 100 - Math.cos(yaw) * 15);
+            ctx.stroke();
+            
+            // Enemies
+            enemies.forEach(enemy => {
+                const dx = enemy.position.x - camera.position.x;
+                const dz = enemy.position.z - camera.position.z;
+                const scale = 2;
+                const ex = 100 + dx * scale;
+                const ez = 100 + dz * scale;
+                
+                if (ex > 0 && ex < 200 && ez > 0 && ez < 200) {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(ex, ez, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Health packs
+            healthPacks.forEach(pack => {
+                const dx = pack.position.x - camera.position.x;
+                const dz = pack.position.z - camera.position.z;
+                const scale = 2;
+                const px = 100 + dx * scale;
+                const pz = 100 + dz * scale;
+                
+                if (px > 0 && px < 200 && pz > 0 && pz < 200) {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(px - 2, pz - 2, 4, 4);
+                }
+            });
+        }
+
+        // Combo sistemi
+        let comboCount = 0;
+        let comboTimer = null;
+        
+        function addCombo() {
+            comboCount++;
+            document.getElementById('comboCount').textContent = comboCount;
+            
+            const multiplier = Math.min(1 + (comboCount * 0.1), 3);
+            document.getElementById('comboMultiplier').textContent = `x${multiplier.toFixed(1)}`;
+            
+            const comboMeter = document.getElementById('comboMeter');
+            comboMeter.classList.add('active');
+            
+            if (comboTimer) clearTimeout(comboTimer);
+            comboTimer = setTimeout(() => {
+                comboCount = 0;
+                comboMeter.classList.remove('active');
+            }, 5000);
+            
+            return multiplier;
+        }
+
+        // Wave sistemi
+        function startNewWave() {
+            waveNumber++;
+            enemiesThisWave = 5 + (waveNumber * 2);
+            enemiesKilledThisWave = 0;
+            
+            const announcement = document.getElementById('waveAnnouncement');
+            announcement.textContent = `DALGA ${waveNumber}`;
+            announcement.classList.add('active');
+            
+            setTimeout(() => announcement.classList.remove('active'), 3000);
+            
+            document.getElementById('waveNumber').textContent = waveNumber;
+            
+            // Spawn enemies
+            for (let i = 0; i < enemiesThisWave; i++) {
+                setTimeout(() => createEnemy(), i * 500);
+            }
+            
+            playSound(300, 1, 'sine', 0.15);
+        }
+
+        function createHealthPack() {
+            const healthPackGroup = new THREE.Group();
+            
+            // Kırmızı haç kutusu
+            const boxGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const boxMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff,
+                roughness: 0.7,
+                metalness: 0.3
+            });
+            const box = new THREE.Mesh(boxGeometry, boxMaterial);
+            healthPackGroup.add(box);
+            
+            // Kırmızı haç (yatay)
+            const crossH = new THREE.Mesh(
+                new THREE.BoxGeometry(0.6, 0.15, 0.15),
+                new THREE.MeshStandardMaterial({ color: 0xff0000 })
+            );
+            healthPackGroup.add(crossH);
+            
+            // Kırmızı haç (dikey)
+            const crossV = new THREE.Mesh(
+                new THREE.BoxGeometry(0.15, 0.6, 0.15),
+                new THREE.MeshStandardMaterial({ color: 0xff0000 })
+            );
+            healthPackGroup.add(crossV);
+            
+            // Rastgele pozisyon
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 10 + Math.random() * 20;
+            healthPackGroup.position.set(
+                Math.cos(angle) * distance,
+                0.5,
+                Math.sin(angle) * distance
+            );
+            
+            healthPackGroup.userData.type = 'healthpack';
+            healthPackGroup.userData.rotationSpeed = 0.02;
+            
+            scene.add(healthPackGroup);
+            healthPacks.push(healthPackGroup);
+        }
+
+        function toggleInventory() {
+            if (!gameStarted) return;
+            inventoryOpen = !inventoryOpen;
+            const inv = document.getElementById('inventory');
+            if (inventoryOpen) {
+                inv.classList.add('active');
+            } else {
+                inv.classList.remove('active');
+            }
+        }
+
+        function updateInventoryDisplay() {
+            document.getElementById('medkitCount').textContent = inventory.medkits;
+            document.getElementById('ammoBoxCount').textContent = inventory.ammoBoxes;
+            document.getElementById('grenadeCount').textContent = inventory.grenades;
+            document.getElementById('armorCount').textContent = inventory.armorPlates;
+        }
+
+        function showPickupNotification(text) {
+            const notification = document.createElement('div');
+            notification.className = 'pickup-notification';
+            notification.textContent = text;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 1500);
+        }
+
+        function useMedkit() {
+            if (!gameStarted || inventory.medkits <= 0 || health >= 100) return;
+            
+            inventory.medkits--;
+            health = Math.min(100, health + 50);
+            
+            updateInventoryDisplay();
+            updateHealthDisplay();
+            
+            addKillFeedMessage('🏥 Sağlık Paketi Kullanıldı +50 HP');
+            showPickupNotification('💚 +50 SAĞLIK');
+            playSound(500, 0.3);
+        }
+
+        function useAmmoBox() {
+            if (!gameStarted || inventory.ammoBoxes <= 0) return;
+            
+            inventory.ammoBoxes--;
+            
+            // Mevcut silahın mermilerini doldur
+            const weapon = weapons[currentWeapon];
+            weapon.totalAmmo = Math.min(weapon.totalAmmo + weapon.maxAmmo, weapon.maxAmmo * 3);
+            totalAmmo = weapon.totalAmmo;
+            
+            updateInventoryDisplay();
+            updateAmmoDisplay();
+            
+            addKillFeedMessage(`📦 Mermi Kutusu Kullanıldı +${weapon.maxAmmo} Mermi`);
+            showPickupNotification('🔫 +MERMİ');
+            playSound(450, 0.3, 'sine', 0.12);
+        }
+
+        function useArmor() {
+            if (!gameStarted || inventory.armorPlates <= 0 || armor >= maxArmor) return;
+            
+            inventory.armorPlates--;
+            armor = Math.min(maxArmor, armor + 50);
+            
+            updateInventoryDisplay();
+            updateArmorDisplay();
+            
+            addKillFeedMessage('🛡️ Zırh Plakası Kullanıldı +50 Zırh');
+            showPickupNotification('🛡️ +50 ZIRH');
+            playSound(500, 0.3, 'sine', 0.12);
+        }
+
+        function updateArmorDisplay() {
+            const armorFill = document.getElementById('armorFill');
+            armorFill.style.width = armor + '%';
+        }
+
+        function useGrenade() {
+            if (!gameStarted || inventory.grenades <= 0) return;
+            
+            inventory.grenades--;
+            updateInventoryDisplay();
+            
+            // Bomba efekti - yakındaki düşmanları öldür
+            const grenadeRadius = 15;
+            let killedCount = 0;
+            
+            enemies.forEach(enemy => {
+                const distance = enemy.position.distanceTo(camera.position);
+                if (distance < grenadeRadius) {
+                    killEnemy(enemy);
+                    killedCount++;
+                }
+            });
+            
+            addKillFeedMessage(`💣 El Bombası! ${killedCount} Düşman Etkisiz Hale Getirildi`);
+            showPickupNotification('💥 PATLAMA!');
+            playSound(100, 0.5);
+            
+            // Ekran sarsıntısı efekti
+            let shakeAmount = 0;
+            const shakeInterval = setInterval(() => {
+                shakeAmount++;
+                camera.rotation.z = (Math.random() - 0.5) * 0.1;
+                
+                if (shakeAmount > 10) {
+                    clearInterval(shakeInterval);
+                    camera.rotation.z = 0;
+                }
+            }, 50);
+        }
+
+        function checkHealthPackPickup() {
+            healthPacks.forEach((pack, index) => {
+                const distance = pack.position.distanceTo(camera.position);
+                
+                if (distance < 2) {
+                    // Toplama
+                    scene.remove(pack);
+                    healthPacks.splice(index, 1);
+                    
+                    inventory.medkits++;
+                    updateInventoryDisplay();
+                    
+                    showPickupNotification('🏥 SAĞLIK PAKETİ TOPLANDI');
+                    addKillFeedMessage('Sağlık Paketi Toplandı');
+                    playSound(600, 0.2);
+                }
+            });
+        }
+
+        function shoot() {
+            if (!gameStarted || isReloading || !canShoot) return;
+            
+            const weapon = weapons[currentWeapon];
+            if (weapon.currentAmmo <= 0) return;
+            
+            weapon.currentAmmo--;
+            currentAmmo = weapon.currentAmmo;
+            shotsFired++;
+            updateAmmoDisplay();
+            
+            // Fire rate kontrolü
+            canShoot = false;
+            setTimeout(() => canShoot = true, weapon.fireRate);
+            
+            // Silah sesi
+            playWeaponSound(currentWeapon);
+            showMuzzleFlash();
+            
+            // Tetik parmağı animasyonu
+            if (playerWeapon && playerWeapon.userData.triggerFinger) {
+                const triggerFinger = playerWeapon.userData.triggerFinger;
+                const originalRotation = triggerFinger.rotation.x;
+                triggerFinger.rotation.x = Math.PI / 2;
+                setTimeout(() => triggerFinger.rotation.x = originalRotation, 100);
+            }
+            
+            // Silah geri tepme
+            if (playerWeapon) {
+                const recoil = currentWeapon === 'shotgun' ? 0.12 : (currentWeapon === 'sniper' ? 0.15 : 0.08);
+                const originalZ = playerWeapon.position.z;
+                const originalRotX = playerWeapon.rotation.x;
+                
+                playerWeapon.position.z += recoil;
+                playerWeapon.rotation.x += recoil * 0.5;
+                
+                setTimeout(() => {
+                    playerWeapon.position.z = originalZ;
+                    playerWeapon.rotation.x = originalRotX;
+                }, 100);
+            }
+            
+            // Shotgun: Çoklu mermi
+            const pellets = currentWeapon === 'shotgun' ? weapon.pelletsPerShot : 1;
+            
+            for (let i = 0; i < pellets; i++) {
+                // Spread (yayılma)
+                const spreadX = (Math.random() - 0.5) * weapon.spread;
+                const spreadY = (Math.random() - 0.5) * weapon.spread;
+                
+                raycaster.setFromCamera({ x: spreadX, y: spreadY }, camera);
+                const intersects = raycaster.intersectObjects(enemies, true);
+                
+                if (intersects.length > 0) {
+                    const hitObject = intersects[0].object;
+                    const hitEnemy = hitObject.parent;
+                    
+                    if (enemies.includes(hitEnemy)) {
+                        shotsHit++;
+                        let damage = weapon.damage;
+                        let isHeadshot = false;
+                        
+                        // Kafaya isabet kontrolü
+                        if (hitObject === hitEnemy.children[0]) {
+                            damage *= 3; // Triple damage for headshot
+                            isHeadshot = true;
+                            headshots++;
+                            addKillFeedMessage('💀 HEADSHOT! 💀');
+                            playSound(400, 0.15, 'sine', 0.15);
+                        }
+                        
+                        hitEnemy.userData.health -= damage;
+                        showHitMarker(isHeadshot);
+                        createBloodParticles(intersects[0].point);
+                        
+                        if (hitEnemy.userData.health <= 0) {
+                            const multiplier = addCombo();
+                            const points = Math.floor(hitEnemy.userData.points * multiplier);
+                            score += points;
+                            killEnemy(hitEnemy, isHeadshot, points);
+                        }
+                    }
+                }
+            }
+            
+            // Accuracy güncelle
+            accuracy = Math.floor((shotsHit / shotsFired) * 100);
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function showMuzzleFlash() {
+            const flash = document.getElementById('muzzleFlash');
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 100);
+        }
+
+        function showHitMarker(isHeadshot = false) {
+            const marker = document.getElementById('hitMarker');
+            marker.classList.remove('active', 'headshot');
+            
+            // Force reflow
+            void marker.offsetWidth;
+            
+            if (isHeadshot) {
+                marker.classList.add('headshot');
+            } else {
+                marker.classList.add('active');
+            }
+            
+            setTimeout(() => marker.classList.remove('active', 'headshot'), isHeadshot ? 300 : 200);
+        }
+
+        function killEnemy(enemy, isHeadshot = false, points = 100) {
+            scene.remove(enemy);
+            enemies = enemies.filter(e => e !== enemy);
+            kills++;
+            enemiesKilledThisWave++;
+            
+            if (!isHeadshot) {
+                addKillFeedMessage(`Düşman Etkisiz Hale Getirildi +${points}`);
+            }
+            updateKillCount();
+            updateEnemyCount();
+            
+            playSound(150, 0.2, 'sine', 0.1);
+            
+            // Wave tamamlandı mı kontrol et
+            if (enemiesKilledThisWave >= enemiesThisWave && enemies.length === 0) {
+                setTimeout(() => startNewWave(), 3000);
+            }
+        }
+
+        function reload() {
+            if (totalAmmo <= 0 || currentAmmo === maxAmmoPerMag || isReloading) return;
+            
+            isReloading = true;
+            reloadProgress = 0;
+            
+            addKillFeedMessage('🔄 Şarjör Değiştiriliyor...');
+            playSound(250, 0.2);
+            
+            const magazine = playerWeapon.userData.magazine;
+            const leftHand = playerWeapon.userData.leftHand;
+            const rightHand = playerWeapon.userData.rightHand;
+            
+            const originalMagY = magazine.position.y;
+            const originalMagRotX = magazine.rotation.x;
+            const originalLeftHandZ = leftHand.position.z;
+            const originalRightHandY = rightHand.position.y;
+            
+            let animationFrame = 0;
+            
+            const reloadInterval = setInterval(() => {
+                animationFrame++;
+                reloadProgress += 50;
+                
+                // Faz 1: Sol el şarjöre uzanıyor (0-400ms)
+                if (reloadProgress < 400) {
+                    leftHand.position.z = originalLeftHandZ + (reloadProgress / 400) * 0.3;
+                    leftHand.position.y -= 0.001;
+                }
+                // Faz 2: Şarjör çıkarılıyor (400-800ms)
+                else if (reloadProgress < 800) {
+                    const progress = (reloadProgress - 400) / 400;
+                    magazine.position.y = originalMagY - progress * 0.5;
+                    magazine.rotation.x = originalMagRotX - progress * 0.3;
+                    leftHand.position.y -= 0.002;
+                }
+                // Faz 3: Boş şarjör düşürülüyor (800-1000ms)
+                else if (reloadProgress < 1000) {
+                    magazine.visible = false;
+                    leftHand.position.y = originalRightHandY;
+                    playSound(180, 0.1);
+                }
+                // Faz 4: Yeni şarjör takılıyor (1000-1400ms)
+                else if (reloadProgress < 1400) {
+                    magazine.visible = true;
+                    const progress = (reloadProgress - 1000) / 400;
+                    magazine.position.y = originalMagY - 0.5 + progress * 0.5;
+                    magazine.rotation.x = originalMagRotX - 0.3 + progress * 0.3;
+                    leftHand.position.y += 0.002;
+                }
+                // Faz 5: Horoz çekme (1400-1800ms)
+                else if (reloadProgress < 1800) {
+                    rightHand.position.y = originalRightHandY - Math.sin((reloadProgress - 1400) / 400 * Math.PI) * 0.05;
+                    playerWeapon.position.z -= 0.001;
+                }
+                // Faz 6: Normal pozisyona dönüş (1800-2000ms)
+                else if (reloadProgress < 2000) {
+                    leftHand.position.z = originalLeftHandZ;
+                    leftHand.position.y = 0;
+                    rightHand.position.y = originalRightHandY;
+                    playerWeapon.position.z = -0.5;
+                    magazine.position.y = originalMagY;
+                    magazine.rotation.x = originalMagRotX;
+                }
+                // Tamamlandı
+                else {
+                    clearInterval(reloadInterval);
+                    
+                    // Değerleri kesin ayarla
+                    magazine.visible = true;
+                    magazine.position.y = originalMagY;
+                    magazine.rotation.x = originalMagRotX;
+                    leftHand.position.z = originalLeftHandZ;
+                    leftHand.position.y = 0;
+                    rightHand.position.y = originalRightHandY;
+                    playerWeapon.position.z = -0.5;
+                    
+                    // Mermi doldur
+                    const needed = maxAmmoPerMag - currentAmmo;
+                    const available = Math.min(needed, totalAmmo);
+                    
+                    currentAmmo += available;
+                    totalAmmo -= available;
+                    
+                    updateAmmoDisplay();
+                    isReloading = false;
+                    
+                    addKillFeedMessage('✅ Hazır');
+                    playSound(350, 0.15);
+                }
+            }, 50);
+        }
+
+        function addKillFeedMessage(msg) {
+            const feed = document.getElementById('killFeed');
+            const message = document.createElement('div');
+            message.className = 'kill-message';
+            message.textContent = msg;
+            feed.insertBefore(message, feed.firstChild);
+            
+            setTimeout(() => message.remove(), 3000);
+            
+            // Maksimum 5 mesaj
+            while (feed.children.length > 5) {
+                feed.lastChild.remove();
+            }
+        }
+
+        function updateEnemyCount() {
+            document.getElementById('enemyCount').textContent = enemies.length;
+        }
+
+        function updateKillCount() {
+            document.getElementById('killCount').textContent = kills;
+            document.getElementById('headshotCount').textContent = headshots;
+        }
+
+        function updateAmmoDisplay() {
+            document.getElementById('currentAmmo').textContent = currentAmmo;
+            document.getElementById('totalAmmo').textContent = totalAmmo;
+        }
+
+        function updateHealthDisplay() {
+            const healthFill = document.getElementById('healthFill');
+            healthFill.style.width = health + '%';
+        }
+
+        function damagePlayer(amount) {
+            // Önce zırh hasar alır
+            if (armor > 0) {
+                const armorDamage = Math.min(armor, amount);
+                armor -= armorDamage;
+                amount -= armorDamage;
+                updateArmorDisplay();
+            }
+            
+            // Kalan hasar sağlığa
+            if (amount > 0) {
+                health -= amount;
+                updateHealthDisplay();
+            }
+            
+            // Hasar göstergesi
+            const damageInd = document.getElementById('damageIndicator');
+            damageInd.classList.add('active');
+            setTimeout(() => damageInd.classList.remove('active'), 200);
+            
+            if (health <= 0) {
+                gameOver();
+            } else {
+                playSound(300, 0.15, 'sawtooth', 0.1);
+            }
+        }
+
+        function gameOver() {
+            gameStarted = false;
+            const finalStats = `
+                <div style="margin: 20px 0;">
+                    <div style="font-size: 24px; color: #ff6600;">SKOR: ${score}</div>
+                    <div style="font-size: 18px; margin-top: 10px;">Öldürülen: ${kills}</div>
+                    <div>Headshot: ${headshots}</div>
+                    <div>İsabet Oranı: ${accuracy}%</div>
+                    <div>Ulaşılan Dalga: ${waveNumber}</div>
+                </div>
+            `;
+            document.getElementById('finalScore').innerHTML = finalStats;
+            document.getElementById('gameOver').classList.add('active');
+            document.exitPointerLock();
+        }
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            gameStarted = true;
+            document.body.requestPointerLock();
+            initAudio();
+            
+            // İlk düşmanları oluştur
+            for (let i = 0; i < enemiesThisWave; i++) {
+                setTimeout(() => createEnemy(), i * 200);
+            }
+            
+            // Sağlık paketleri oluştur
+            for (let i = 0; i < 3; i++) {
+                createHealthPack();
+            }
+            
+            // İlk dalga duyurusu
+            setTimeout(() => {
+                const announcement = document.getElementById('waveAnnouncement');
+                announcement.textContent = `DALGA ${waveNumber}`;
+                announcement.classList.add('active');
+                setTimeout(() => announcement.classList.remove('active'), 3000);
+            }, 500);
+            
+            animate();
+        }
+
+        function restartGame() {
+            // Oyunu sıfırla
+            enemies.forEach(e => scene.remove(e));
+            enemies = [];
+            healthPacks.forEach(p => scene.remove(p));
+            healthPacks = [];
+            particles.forEach(p => scene.remove(p));
+            particles = [];
+            
+            score = 0;
+            kills = 0;
+            headshots = 0;
+            shotsFired = 0;
+            shotsHit = 0;
+            accuracy = 0;
+            health = 100;
+            armor = 0;
+            waveNumber = 1;
+            enemiesThisWave = 5;
+            enemiesKilledThisWave = 0;
+            survivalTime = 0;
+            comboCount = 0;
+            
+            // Silahları sıfırla
+            Object.keys(weapons).forEach(key => {
+                weapons[key].currentAmmo = weapons[key].magSize;
+                weapons[key].totalAmmo = weapons[key].maxAmmo;
+            });
+            currentWeapon = 'ak47';
+            currentAmmo = weapons.ak47.currentAmmo;
+            totalAmmo = weapons.ak47.totalAmmo;
+            
+            inventory = {
+                medkits: 3,
+                grenades: 2,
+                ammoBoxes: 1,
+                armorPlates: 2
+            };
+            
+            updateKillCount();
+            updateEnemyCount();
+            updateAmmoDisplay();
+            updateHealthDisplay();
+            updateArmorDisplay();
+            updateInventoryDisplay();
+            document.getElementById('accuracy').textContent = '0%';
+            document.getElementById('waveNumber').textContent = '1';
+            
+            document.getElementById('gameOver').classList.remove('active');
+            document.getElementById('killFeed').innerHTML = '';
+            document.getElementById('comboMeter').classList.remove('active');
+            
+            startGame();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            if (!document.pointerLockElement) return;
+            
+            mouseX = event.movementX || 0;
+            mouseY = event.movementY || 0;
+            
+            yaw -= mouseX * 0.002;
+            pitch -= mouseY * 0.002;
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+        }
+
+        function updateCamera() {
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+        }
+
+        function updatePlayer() {
+            const direction = new THREE.Vector3();
+            
+            if (keys['w']) direction.z = -1;  // İleri
+            if (keys['s']) direction.z = 1;   // Geri
+            if (keys['a']) direction.x = -1;  // Sol
+            if (keys['d']) direction.x = 1;   // Sağ
+            
+            if (direction.length() > 0) {
+                direction.normalize();
+                
+                const forward = new THREE.Vector3(0, 0, -1);
+                forward.applyQuaternion(camera.quaternion);
+                forward.y = 0;
+                forward.normalize();
+                
+                const right = new THREE.Vector3(1, 0, 0);
+                right.applyQuaternion(camera.quaternion);
+                right.y = 0;
+                right.normalize();
+                
+                const move = new THREE.Vector3();
+                move.addScaledVector(forward, direction.z);
+                move.addScaledVector(right, direction.x);
+                move.normalize();
+                
+                camera.position.x += move.x * moveSpeed;
+                camera.position.z += move.z * moveSpeed;
+                
+                // Yürüme sallantısı
+                if (playerWeapon && !isReloading) {
+                    const time = Date.now() * 0.005;
+                    playerWeapon.position.y = -0.2 + Math.sin(time) * 0.02;
+                    playerWeapon.rotation.z = Math.sin(time * 0.5) * 0.01;
+                }
+            } else {
+                // Duruyorsa normal pozisyona dön
+                if (playerWeapon && !isReloading) {
+                    playerWeapon.position.y = -0.2;
+                    playerWeapon.rotation.z = 0;
+                }
+            }
+        }
+
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                // Oyuncuya doğru hareket et
+                const direction = new THREE.Vector3();
+                direction.subVectors(camera.position, enemy.position);
+                direction.y = 0;
+                direction.normalize();
+                
+                enemy.position.x += direction.x * enemy.userData.speed;
+                enemy.position.z += direction.z * enemy.userData.speed;
+                
+                // Yürüme animasyonu
+                enemy.userData.walkCycle += 0.15;
+                const bounce = Math.sin(enemy.userData.walkCycle) * 0.05;
+                enemy.position.y = 0.55 + bounce;
+                
+                // Kol ve bacak animasyonu
+                if (enemy.children.length > 0) {
+                    const armSwing = Math.sin(enemy.userData.walkCycle) * 0.3;
+                    const legSwing = Math.sin(enemy.userData.walkCycle) * 0.2;
+                    
+                    // Sol kol
+                    if (enemy.children[4]) enemy.children[4].rotation.x = armSwing;
+                    if (enemy.children[5]) enemy.children[5].rotation.x = armSwing * 0.5;
+                    
+                    // Sağ kol
+                    if (enemy.children[7]) enemy.children[7].rotation.x = -armSwing;
+                    if (enemy.children[8]) enemy.children[8].rotation.x = -armSwing * 0.5;
+                    
+                    // Sol bacak
+                    if (enemy.children[10]) enemy.children[10].rotation.x = legSwing;
+                    if (enemy.children[11]) enemy.children[11].rotation.x = legSwing * 0.7;
+                    
+                    // Sağ bacak
+                    if (enemy.children[13]) enemy.children[13].rotation.x = -legSwing;
+                    if (enemy.children[14]) enemy.children[14].rotation.x = -legSwing * 0.7;
+                }
+                
+                // Oyuncuya bak
+                enemy.lookAt(camera.position);
+                
+                // Oyuncuya yakınsa hasar ver
+                const distance = enemy.position.distanceTo(camera.position);
+                if (distance < 2) {
+                    damagePlayer(0.5);
+                }
+            });
+            
+            // Yeni düşman oluştur
+            if (enemies.length < 10 && Math.random() < 0.01) {
+                createEnemy();
+            }
+        }
+
+        function animate() {
+            if (!gameStarted) return;
+            
+            requestAnimationFrame(animate);
+            
+            updateCamera();
+            updatePlayer();
+            updateEnemies();
+            checkHealthPackPickup();
+            updateParticles();
+            updateMiniMap();
+            
+            // FPS counter
+            const currentTime = Date.now();
+            fps = Math.round(1000 / (currentTime - lastTime));
+            lastTime = currentTime;
+            document.getElementById('fps').textContent = fps;
+            
+            // Survival time
+            survivalTime++;
+            
+            // Sağlık paketlerini döndür
+            healthPacks.forEach(pack => {
+                pack.rotation.y += pack.userData.rotationSpeed;
+                pack.position.y = 0.5 + Math.sin(Date.now() * 0.002) * 0.1;
+            });
+            
+            renderer.render(scene, camera);
+        }
+
+        // Oyunu başlat
+        init();
+    </script>
 </body>
 </html>
