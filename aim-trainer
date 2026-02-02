@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro Link Arşivi</title>
+
+<link rel="icon" type="image/png" href="https://img.icons8.com/color/48/whatsapp--v1.png">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<style>
+  :root {
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 12px;
+  }
+
+  .dark-mode {
+    --bg: #0f172a;
+    --side-bg: #1e293b;
+    --text: #f8fafc;
+    --accent: #38bdf8;
+    --card-bg: #334155;
+    --input-bg: #1e293b;
+  }
+
+  .light-mode {
+    --bg: #f8fafc;
+    --side-bg: #ffffff;
+    --text: #0f172a;
+    --accent: #0284c7;
+    --card-bg: #f1f5f9;
+    --input-bg: #ffffff;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    display: flex;
+    height: 100vh;
+    background-color: var(--bg);
+    color: var(--text);
+    transition: background-color var(--transition);
+    overflow: hidden;
+  }
+
+  #sidebar {
+    width: 380px;
+    background-color: var(--side-bg);
+    border-right: 1px solid rgba(128,128,128,0.2);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 10px 0 15px -3px rgba(0,0,0,0.1);
+  }
+
+  .search-box {
+    padding: 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--accent);
+    background: var(--input-bg);
+    color: var(--text);
+    margin-bottom: 15px;
+    outline: none;
+  }
+
+  #linkList {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .link-card {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    gap: 15px;
+    cursor: grab;
+    border: 1px solid transparent;
+    transition: 0.2s;
+  }
+
+  .link-card:hover {
+    border-color: var(--accent);
+    transform: translateX(5px);
+  }
+
+  .favicon-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: white;
+    padding: 2px;
+  }
+
+  .link-info {
+    flex-grow: 1;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .delete-btn {
+    color: #ff4d4d;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 20px;
+    padding: 0 5px;
+  }
+
+  #main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+  }
+
+  .input-group {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .input-box {
+    flex-grow: 1;
+    padding: 15px;
+    background: var(--input-bg);
+    border: 2px solid var(--card-bg);
+    color: var(--text);
+    border-radius: var(--radius);
+    outline: none;
+  }
+
+  .action-btn {
+    background: var(--accent);
+    color: white;
+    padding: 0 25px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .mini-btn {
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body class="dark-mode">
+
+<div class="controls">
+  <button class="mini-btn" onclick="exportJSON()">YEDEKLE</button>
+  <button class="mini-btn" onclick="toggleMode()">MOD</button>
+</div>
+
+<div id="sidebar">
+  <h2 style="margin-top:0">📁 ARŞİV</h2>
+  <input type="text" id="searchInput" class="search-box" placeholder="Ara..." oninput="renderLinks()">
+  <div id="linkList"></div>
+</div>
+
+<div id="main">
+  <h1>Link Ekle</h1>
+  <div class="input-group">
+    <input type="text" id="urlInput" class="input-box" placeholder="Site adresi gir...">
+    <button class="action-btn" onclick="addLink()">EKLE</button>
+  </div>
+</div>
+
+<script>
+  let savedLinks = JSON.parse(localStorage.getItem('iconLinks')) || [];
+
+  const dragArea = document.getElementById('linkList');
+  new Sortable(dragArea, {
+    animation: 150,
+    onEnd: function() {
+      const cards = Array.from(dragArea.querySelectorAll('.link-card'));
+      savedLinks = cards.map(card => savedLinks.find(item => item.id == card.dataset.id));
+      localStorage.setItem('iconLinks', JSON.stringify(savedLinks));
+    }
+  });
+
+  window.onload = renderLinks;
+
+  function addLink() {
+    const input = document.getElementById('urlInput');
+    let val = input.value.trim();
+    if (val) {
+      let rawUrl = val.replace(/^(https?:\/\/)/, "").split('/')[0];
+      let fullUrl = val.startsWith('http') ? val : 'https://' + val;
+      let iconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${rawUrl}`;
+
+      savedLinks.unshift({ id: Date.now(), display: val, fullUrl: fullUrl, icon: iconUrl });
+      updateStorage();
+      input.value = '';
+    }
+  }
+
+  function deleteLink(id) {
+    savedLinks = savedLinks.filter(item => item.id !== id);
+    updateStorage();
+  }
+
+  function renderLinks() {
+    const list = document.getElementById('linkList');
+    const term = document.getElementById('searchInput').value.toLowerCase();
+    list.innerHTML = '';
+    
+    savedLinks.filter(i => i.display.toLowerCase().includes(term)).forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'link-card';
+      card.dataset.id = item.id;
+      card.innerHTML = `
+        <img src="${item.icon}" class="favicon-img" onerror="this.src='https://img.icons8.com/color/48/whatsapp--v1.png'">
+        <a href="${item.fullUrl}" target="_blank" class="link-info">${item.display}</a>
+        <span class="delete-btn" onclick="deleteLink(${item.id})">×</span>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  function updateStorage() {
+    localStorage.setItem('iconLinks', JSON.stringify(savedLinks));
+    renderLinks();
+  }
+
+  function toggleMode() {
+    document.body.classList.toggle('dark-mode');
+    document.body.classList.toggle('light-mode');
+  }
+
+  function exportJSON() {
+    const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedLinks));
+    const a = document.createElement('a');
+    a.href = data; a.download = "yedek.json"; a.click();
+  }
+
+  document.getElementById("urlInput").addEventListener("keypress", (e) => { if (e.key === "Enter") addLink(); });
+</script>
+</body>
+</html>
